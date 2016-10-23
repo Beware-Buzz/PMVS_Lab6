@@ -11,7 +11,7 @@
 #include <asm/param.h>
 
 MODULE_LICENSE("GPL");
-MODULE_AUTHOR("Nagibator 777");
+MODULE_AUTHOR("Nagibator 7777");
 MODULE_VERSION("1");
 
 static struct timer_list my_timer;
@@ -20,13 +20,22 @@ static int times_left = 0;
 static int delay = 5;
 
 
-
-
-static void mytimer_exit(void)
-{	
-	kobject_put(mytimer_kobject);
-	del_timer(&my_timer);
+static void print_hello(unsigned long data)
+{
+	if (times_left > 0) {
+		printk(KERN_INFO "Hello, world!\n");
+		times_left--;
+	} 	
+	mod_timer(&my_timer, jiffies + delay * HZ);
 }
 
-module_init(mytimer_init);
-module_exit(mytimer_exit);
+static ssize_t mytimer_read(struct kobject *kobj, struct kobj_attribute *attr, char *buf)
+{
+	return sprintf(buf, "%d\n", times_left);
+}
+
+static ssize_t mytimer_write(struct kobject *kobj, struct kobj_attribute *attr, const char *buf, size_t count)
+{
+	sscanf(buf, "%du", &times_left);
+	return count;
+}
