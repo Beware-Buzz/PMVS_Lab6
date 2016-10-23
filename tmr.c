@@ -39,3 +39,34 @@ static ssize_t mytimer_write(struct kobject *kobj, struct kobj_attribute *attr, 
 	sscanf(buf, "%du", &times_left);
 	return count;
 }
+
+static struct kobj_attribute times_left_attribute =__ATTR(times_left, 0777, mytimer_read, mytimer_write);
+
+static int mytimer_init(void)
+{
+	int error = 0;	
+	mytimer_kobject = kobject_create_and_add("mytimer", kernel_kobj);
+	if (!mytimer_kobject) {
+		return -ENOMEM;
+	}
+	error = sysfs_create_file(mytimer_kobject, &times_left_attribute.attr);
+	if (error) {
+		printk(KERN_INFO "failed to create the times_left file in /sys/kernel/mytimer \n");
+		return error;
+	}
+	init_timer_on_stack(&my_timer);
+	my_timer.expires = jiffies + delay * HZ;
+	my_timer.data = 0;
+	my_timer.function = print_hello;
+	add_timer(&my_timer);
+	return 0;
+}
+
+static void mytimer_exit(void)
+{	
+	kobject_put(mytimer_kobject);
+	del_timer(&my_timer);
+}
+
+module_init(mytimer_init);
+module_exit(mytimer_exit);
